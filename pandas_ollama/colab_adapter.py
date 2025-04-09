@@ -93,6 +93,17 @@ class OllamaColabAdapter:
             f"root@{self.remote_host}"
         ]
         
+        # Bazı durumlarda farklı kullanıcı adları ile çalışabilme esnekliği eklendi
+        username = os.environ.get("SSH_USERNAME", "root")  # Varsayılan root, çevre değişkeni ile değiştirilebilir
+        host_with_user = f"{username}@{self.remote_host}"
+        
+        cmd = [
+            "ssh", "-o", "StrictHostKeyChecking=no",
+            "-i", key_path,
+            "-N", "-L", f"{self.local_port}:localhost:{self.remote_port}",
+            host_with_user
+        ]
+        
         try:
             self.tunnel_process = subprocess.Popen(cmd)
             time.sleep(2)  # Tünelin kurulmasını bekle

@@ -346,6 +346,12 @@ Eksik Değerler:
             traceback.print_exc()
             return StructuredResponse(error=f"Error calling AI service: {str(e)}")
 
+    def _format_numeric_value(self, value):
+        """Sayısal değerleri formatla"""
+        if isinstance(value, (float, np.float64, np.float32)):
+            return f"{value:.2f}"  # İki ondalık basamakla sınırla
+        return value
+
     def _execute_llm_code(self, response: str, query: str, generate_viz: bool, viz_type: str) -> StructuredResponse:
         """
         LLM'den gelen yanıtı parse eder, kodu çıkarır ve çalıştırır.
@@ -406,7 +412,7 @@ Eksik Değerler:
                                 value = execution_locals[var_name]
                                 # Ondalık sayıları iki basamakla sınırla
                                 if isinstance(value, (float, np.float64, np.float32)):
-                                    formatted_value = f"{value:.2f}"  # İki ondalık basamakla sınırla
+                                    formatted_value = self._format_numeric_value(value)
                                     structured_response.content += f"\n\n**Sonuç:** {formatted_value}"
                                 else:
                                     structured_response.content += f"\n\n**Sonuç:** {value}"
@@ -422,7 +428,7 @@ Eksik Değerler:
                                     if isinstance(value, (int, float, np.float64, np.float32)):
                                         # Ondalık sayıları iki basamakla sınırla
                                         if isinstance(value, (float, np.float64, np.float32)):
-                                            formatted_value = f"{value:.2f}"  # İki ondalık basamakla sınırla
+                                            formatted_value = self._format_numeric_value(value)
                                             structured_response.content += f"\n\n**Hesaplanan {var_name}:** {formatted_value}"
                                         else:
                                             structured_response.content += f"\n\n**Hesaplanan {var_name}:** {value}"
@@ -442,7 +448,7 @@ Eksik Değerler:
                         # Eğer hala sonuç bulunamadıysa, son çare olarak ortalama fiyatı hesapla
                         if not result_found and 'Price' in self.df.columns and query and ('ortalama' in query.lower() or 'average' in query.lower() or 'mean' in query.lower()):
                             value = self.df['Price'].mean()
-                            formatted_value = f"{value:.2f}"  # İki ondalık basamakla sınırla
+                            formatted_value = self._format_numeric_value(value)
                             structured_response.content += f"\n\n**Hesaplanan ortalama fiyat:** {formatted_value}"
                             
                     except SyntaxError as se:
