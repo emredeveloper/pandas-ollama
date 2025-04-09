@@ -31,9 +31,9 @@ except FileNotFoundError:
 
 setup(
     name="pandas-ollama",
-    version="1.0.1",  # Sürüm numarası burada 1.0.1 olarak güncellenmiş olmalı
-    author="Emre Qenco",
-    author_email="your.email@example.com",
+    version="1.0.1",
+    author="Cihat Emre Karataş",
+    author_email="chtemrekrts@gmail.com",
     description="Natural language interface for pandas DataFrame analysis using Ollama models",
     long_description=long_description,
     long_description_content_type="text/markdown",
