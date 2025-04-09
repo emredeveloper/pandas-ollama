@@ -404,7 +404,12 @@ Eksik Değerler:
                         for var_name in result_variable_names:
                             if var_name in execution_locals:
                                 value = execution_locals[var_name]
-                                structured_response.content += f"\n\n**Sonuç:** {value}"
+                                # Ondalık sayıları iki basamakla sınırla
+                                if isinstance(value, (float, np.float64, np.float32)):
+                                    formatted_value = f"{value:.2f}"  # İki ondalık basamakla sınırla
+                                    structured_response.content += f"\n\n**Sonuç:** {formatted_value}"
+                                else:
+                                    structured_response.content += f"\n\n**Sonuç:** {value}"
                                 result_found = True
                                 break
                         
@@ -414,7 +419,15 @@ Eksik Değerler:
                                 if var_name != 'df' and not var_name.startswith('_'):
                                     # Bulduğumuz sonucu içeriğe ekle
                                     value = execution_locals[var_name]
-                                    if isinstance(value, (int, float, str, bool, list, dict)):
+                                    if isinstance(value, (int, float, np.float64, np.float32)):
+                                        # Ondalık sayıları iki basamakla sınırla
+                                        if isinstance(value, (float, np.float64, np.float32)):
+                                            formatted_value = f"{value:.2f}"  # İki ondalık basamakla sınırla
+                                            structured_response.content += f"\n\n**Hesaplanan {var_name}:** {formatted_value}"
+                                        else:
+                                            structured_response.content += f"\n\n**Hesaplanan {var_name}:** {value}"
+                                        result_found = True
+                                    elif isinstance(value, (str, bool, list, dict)):
                                         structured_response.content += f"\n\n**Hesaplanan {var_name}:** {value}"
                                         result_found = True
                                     elif isinstance(value, pd.DataFrame) and len(value) <= 10:
@@ -429,7 +442,8 @@ Eksik Değerler:
                         # Eğer hala sonuç bulunamadıysa, son çare olarak ortalama fiyatı hesapla
                         if not result_found and 'Price' in self.df.columns and query and ('ortalama' in query.lower() or 'average' in query.lower() or 'mean' in query.lower()):
                             value = self.df['Price'].mean()
-                            structured_response.content += f"\n\n**Hesaplanan ortalama fiyat:** {value}"
+                            formatted_value = f"{value:.2f}"  # İki ondalık basamakla sınırla
+                            structured_response.content += f"\n\n**Hesaplanan ortalama fiyat:** {formatted_value}"
                             
                     except SyntaxError as se:
                         print(f"❌ Kod çalıştırma hatası: {str(se)}")
