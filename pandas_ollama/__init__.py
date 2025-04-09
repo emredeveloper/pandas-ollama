@@ -5,5 +5,5 @@ pandas_ollama: Pandas verilerini doğal dil sorguları ile analiz eden AI kütü
 from .core import MyPandasAI
 from .response import StructuredResponse
 
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 __all__ = ['MyPandasAI', 'StructuredResponse']
