@@ -10,8 +10,10 @@ except FileNotFoundError:
     long_description = "Pandas-Ollama: Natural language interface for pandas DataFrame analysis using Ollama models"
 
 # Get requirements from requirements.txt
-requirements_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 
-                                'pandas_ollama', 'requirements.txt')
+requirements_path = os.path.join(
+    os.path.abspath(os.path.dirname(__file__)),
+    'pandas_ollama', 'requirements.txt'
+)
 try:
     with open(requirements_path, 'r') as f:
         requirements = f.read().splitlines()
