@@ -1,10 +1,10 @@
 """
-pandas_ollama: Pandas verilerini doğal dil sorguları ile analiz eden AI kütüphanesi.
+pandas_ollama: AI library for analyzing pandas DataFrames using natural language queries.
 
-Bu kütüphane, pandas DataFrame'leri üzerinde doğal dil sorguları yaparak
-veri analizi, dönüşümü ve görselleştirme işlemlerini kolaylaştırır.
+This library simplifies data analysis, transformation, and visualization 
+operations on pandas DataFrames through natural language queries.
 
-Temel Kullanım:
+Basic Usage:
     >>> import pandas as pd
     >>> from pandas_ollama import MyPandasAI
     >>> df = pd.DataFrame({'Product': ['A', 'B', 'C'], 'Price': [10, 20, 30]})
@@ -20,9 +20,9 @@ from .response import StructuredResponse
 try:
     from .colab_adapter import OllamaColabAdapter
 except ImportError:
-    # Google Colab bağımlılıkları yerel ortamda olmayabilir
+    # Google Colab dependencies might not be available in local environment
     pass
 
-__version__ = '1.0.3'
-__author__ = 'Cihat Emre Karataş'
+__version__ = '1.0.4'
+__author__ = 'Cihat Emre Karatas'
 __all__ = ['MyPandasAI', 'StructuredResponse', 'OllamaColabAdapter']

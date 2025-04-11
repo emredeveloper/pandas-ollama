@@ -31,8 +31,8 @@ except FileNotFoundError:
 
 setup(
     name="pandas-ollama",
-    version="1.0.3",  # Yeni sürüm
-    author="Cihat Emre Karata",
+    version="1.0.4",  # Updated version
+    author="Cihat Emre Karatas",
     author_email="chtemrekrts@gmail.com",
     description="Natural language interface for pandas DataFrame analysis using Ollama models",
     long_description=long_description,
@@ -47,7 +47,7 @@ setup(
         "Topic :: Scientific/Engineering :: Visualization",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
-    python_requires=">=3.8",  # 3.7 artık kullanımdan kalkıyor, 3.8+ daha iyi bir seçim
+    python_requires=">=3.8",  # Python 3.8+ is recommended as 3.7 is nearing EOL
     install_requires=requirements,
     include_package_data=True,
     keywords="pandas, ollama, ai, dataframe, analysis, visualization, natural language",

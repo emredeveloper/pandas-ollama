@@ -13,3 +13,4 @@ def test_version():
     from pandas_ollama import __version__
     assert isinstance(__version__, str)
     assert len(__version__) > 0
+    assert __version__ == '1.0.4'  # Updated version number

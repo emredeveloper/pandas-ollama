@@ -1,5 +1,5 @@
 """
-Veri dönüşüm işlemleri için modül - CSV ve genel verilere uyumlu
+Module for data transformation operations - Compatible with CSV and general data
 """
 
 import pandas as pd
@@ -8,42 +8,42 @@ import json
 from typing import Dict, Tuple, List, Any, Optional
 
 class DataTransformer:
-    """Pandas DataFrame dönüşüm sınıfı - Herhangi bir veri yapısı için uyumlu"""
+    """Pandas DataFrame transformation class - Compatible with any data structure"""
     
     def __init__(self, dataframe: pd.DataFrame):
         self.df = dataframe
         
-        # Desteklenen veri dönüşümleri
+        # Supported data transformations
         self.supported_transforms = {
             "filter": self.transform_filter,
             "sort": self.transform_sort,
             "group": self.transform_group,
             "aggregate": self.transform_aggregate,
             "pivot": self.transform_pivot,
-            "select": self.transform_select,  # Yeni: Belirli sütunları seçme
-            "rename": self.transform_rename,  # Yeni: Sütunları yeniden adlandırma
-            "fillna": self.transform_fillna,  # Yeni: Eksik değerleri doldurma
-            "dropna": self.transform_dropna   # Yeni: Eksik değerleri silme
+            "select": self.transform_select,  # New: Select specific columns
+            "rename": self.transform_rename,  # New: Rename columns
+            "fillna": self.transform_fillna,  # New: Fill missing values
+            "dropna": self.transform_dropna   # New: Drop missing values
         }
         
-        # Veri tipleri hakkında bilgi
+        # Information about data types
         self._analyze_datatypes()
     
     def _analyze_datatypes(self) -> None:
-        """DataFrame'deki veri tipleri hakkında bilgi toplar"""
+        """Collects information about data types in the DataFrame"""
         self.numeric_columns = self.df.select_dtypes(include=['number']).columns.tolist()
         self.categorical_columns = self.df.select_dtypes(include=['object', 'category']).columns.tolist()
         self.datetime_columns = self.df.select_dtypes(include=['datetime']).columns.tolist()
         self.bool_columns = self.df.select_dtypes(include=['bool']).columns.tolist()
         
-        # Potansiyel anahtar sütunları tespit et (benzersiz değerlere sahip)
+        # Detect potential key columns (with unique values)
         self.key_columns = []
         for col in self.df.columns:
             if self.df[col].nunique() == len(self.df) and self.df[col].nunique() > 1:
                 self.key_columns.append(col)
     
     def parse_transform_response(self, response: str) -> Tuple[str, Dict, str]:
-        """Dönüşüm yanıtını ayrıştırır"""
+        """Parses transformation response"""
         transform_type = ""
         params = {}
         code = ""
@@ -54,90 +54,90 @@ class DataTransformer:
         for line in lines:
             line = line.strip()
             
-            if "TÜR:" in line:
+            if "TYPE:" in line:
                 current_section = "type"
-                transform_type = line.replace("TÜR:", "").strip().lower()
-            elif "PARAMETRELER:" in line:
+                transform_type = line.replace("TYPE:", "").strip().lower()
+            elif "PARAMETERS:" in line:
                 current_section = "params"
-                param_text = line.replace("PARAMETRELER:", "").strip()
+                param_text = line.replace("PARAMETERS:", "").strip()
                 try:
-                    # JSON formatında parametreleri ayrıştırmayı dene
+                    # Try to parse parameters in JSON format
                     if param_text.startswith("{") and param_text.endswith("}"):
                         import json
                         params = json.loads(param_text)
                 except:
                     pass
-            elif "KOD:" in line:
+            elif "CODE:" in line:
                 current_section = "code"
                 continue
             
             if current_section == "code":
                 code += line + "\n"
         
-        # Genel filtreleme durumları için akıllı tespit
+        # Smart detection for general filtering cases
         if not transform_type or not params:
             transform_type, params = self._detect_transformation_from_text(response)
         
         return transform_type, params, code.strip()
     
     def _detect_transformation_from_text(self, text: str) -> Tuple[str, Dict]:
-        """Metinden dönüşüm türünü ve parametreleri tespit eder"""
+        """Detects transformation type and parameters from text"""
         text = text.lower()
         
-        # Filtreleme işlemi tespiti
-        if any(x in text for x in ["filtre", "filter", "where", "seç", "bul", "getir", "göster", "seçin"]):
+        # Filter operation detection
+        if any(x in text for x in ["filter", "where", "select", "find", "get", "show"]):
             column, condition, value = self._extract_filter_params(text)
             if column:
                 return "filter", {"column": column, "condition": condition, "value": value}
         
-        # Sıralama işlemi tespiti
-        if any(x in text for x in ["sırala", "sort", "order", "düzenle"]):
+        # Sort operation detection
+        if any(x in text for x in ["sort", "order", "arrange"]):
             column, ascending = self._extract_sort_params(text)
             if column:
                 return "sort", {"column": column, "ascending": ascending}
         
-        # Gruplama işlemi tespiti
-        if any(x in text for x in ["grup", "group", "topla", "aggregate"]):
+        # Group operation detection
+        if any(x in text for x in ["group", "aggregate"]):
             columns, agg_func = self._extract_group_params(text)
             if columns:
                 return "group", {"columns": columns, "agg_func": agg_func}
         
-        # Sütun seçme işlemi tespiti
-        if any(x in text for x in ["sütun seç", "select column", "columns", "sütunlar"]):
+        # Column selection operation detection
+        if any(x in text for x in ["select column", "columns"]):
             columns = self._extract_columns_from_text(text)
             if columns:
                 return "select", {"columns": columns}
         
-        # Eksik değer işlemi tespiti
-        if any(x in text for x in ["eksik", "missing", "null", "na", "boş"]):
-            if any(x in text for x in ["doldur", "fill", "değiştir", "replace"]):
-                return "fillna", {"value": 0}  # Varsayılan olarak 0 ile doldur
-            elif any(x in text for x in ["kaldır", "drop", "sil", "çıkar"]):
+        # Missing value operation detection
+        if any(x in text for x in ["missing", "null", "na", "empty"]):
+            if any(x in text for x in ["fill", "replace"]):
+                return "fillna", {"value": 0}  # Default fill with 0
+            elif any(x in text for x in ["drop", "remove", "delete"]):
                 return "dropna", {"how": "any"}
                 
         return "", {}
     
     def _extract_filter_params(self, text: str) -> Tuple[str, str, Any]:
-        """Metin içinden filtreleme parametrelerini çıkarır"""
-        # Tüm sütunlar için kontrol et
+        """Extracts filtering parameters from text"""
+        # Check for all columns
         column = None
         best_match_pos = float('inf')
         
         for col in self.df.columns:
             col_lower = col.lower()
             if col_lower in text:
-                # Eğer birden fazla sütun eşleşirse, metinde daha erken geçeni seç
+                # If multiple columns match, choose the one that appears earlier
                 col_pos = text.find(col_lower)
                 if col_pos < best_match_pos:
                     column = col
                     best_match_pos = col_pos
         
-        # Eğer sütun bulunamadıysa, en uygun sütunu tahmin et
+        # If no column found, try to guess the most appropriate column
         if not column:
-            # Metinde geçen kelimelerle sütun isimlerini karşılaştır
+            # Compare words in text with column names
             words = re.findall(r'\b\w+\b', text)
             for word in words:
-                if len(word) > 3:  # En az 4 karakter olan kelimeleri kontrol et
+                if len(word) > 3:  # Check words with at least 4 characters
                     for col in self.df.columns:
                         if word.lower() in col.lower():
                             column = col
@@ -145,36 +145,36 @@ class DataTransformer:
                     if column:
                         break
         
-        # Yine bulunamadıysa ve sayısal filtre gibi görünüyorsa, ilk sayısal sütunu kullan
+        # If still not found and looks like a numeric filter, use first numeric column
         if not column and re.search(r'\d+', text) and self.numeric_columns:
             column = self.numeric_columns[0]
         
-        # Koşul operatörünü bul
-        condition = "=="  # Varsayılan eşitlik
+        # Find condition operator
+        condition = "=="  # Default equality
         
-        # Karşılaştırma operatörlerini kontrol et
-        if any(x in text for x in ["büyük", "fazla", "yukarı", "üstünde", ">"]):
+        # Check comparison operators
+        if any(x in text for x in ["greater", "more", "above", "over", ">"]):
             condition = ">"
-        elif any(x in text for x in ["küçük", "az", "aşağı", "altında", "<"]):
+        elif any(x in text for x in ["less", "fewer", "below", "under", "<"]):
             condition = "<"
-        elif any(x in text for x in ["eşit değil", "dışında", "hariç", "!="]):
+        elif any(x in text for x in ["not equal", "outside", "except", "!="]):
             condition = "!="
-        elif any(x in text for x in ["büyük eşit", "en az", "minimum", ">="]):
+        elif any(x in text for x in ["greater equal", "at least", "minimum", ">="]):
             condition = ">="
-        elif any(x in text for x in ["küçük eşit", "en fazla", "maksimum", "<="]):
+        elif any(x in text for x in ["less equal", "at most", "maximum", "<="]):
             condition = "<="
-        elif any(x in text for x in ["içeren", "içerir", "var", "bulunur"]):
+        elif any(x in text for x in ["contains", "including", "has", "with"]):
             condition = "contains"
         
-        # Değeri bul
+        # Find value
         value = None
         
-        # Sayısal değeri bul
+        # Find numerical value
         if column and column in self.numeric_columns:
             numbers = re.findall(r'\d+(?:\.\d+)?', text)
             if numbers:
-                # En uygun sayıyı seç (koşul operatörüne yakın olanı)
-                cond_terms = ["büyük", "küçük", "eşit", "fazla", "az"]
+                # Choose the most appropriate number (close to condition operator)
+                cond_terms = ["greater", "less", "equal", "more", "fewer"]
                 best_num_pos = float('inf')
                 best_num = None
                 
@@ -196,131 +196,131 @@ class DataTransformer:
                 else:
                     value = float(numbers[0]) if '.' in numbers[0] else int(numbers[0])
         
-        # Kategorik değeri bul
+        # Find categorical value
         elif column and column in self.categorical_columns:
-            # Olası değerleri al
+            # Get possible values
             possible_values = self.df[column].unique()
             
-            # Metindeki değeri bul
+            # Find value in text
             for val in possible_values:
                 if str(val).lower() in text:
                     value = val
                     break
             
-            # Bulunamadıysa, metinde sık geçen bir kelimeyi dene
+            # If not found, try a common word in the text
             if value is None:
                 words = re.findall(r'\b\w+\b', text)
                 word_counts = {}
                 for word in words:
-                    if len(word) > 3:  # 3 karakterden uzun kelimeler
+                    if len(word) > 3:  # Words longer than 3 characters
                         word_counts[word] = word_counts.get(word, 0) + 1
                 
-                # En sık geçen kelimeyi bul
+                # Find most common word
                 if word_counts:
                     most_common = max(word_counts.items(), key=lambda x: x[1])[0]
                     value = most_common
         
-        # Değer hala bulunamadıysa, varsayılan bir değer kullan
+        # If value still not found, use a default
         if value is None and column:
             if column in self.numeric_columns:
-                # Sayısal sütun için ortalama değer
+                # Average value for numerical column
                 value = self.df[column].mean()
             elif column in self.categorical_columns:
-                # Kategorik sütun için en sık değer
+                # Most frequent value for categorical column
                 value = self.df[column].mode()[0]
         
         return column, condition, value
     
     def _extract_sort_params(self, text: str) -> Tuple[str, bool]:
-        """Metin içinden sıralama parametrelerini çıkarır"""
+        """Extracts sorting parameters from text"""
         column = None
         
-        # Sütun adını bul - önce tam eşleşmeleri dene
+        # Find column name - try exact matches first
         for col in self.df.columns:
             if col.lower() in text.lower():
                 column = col
                 break
         
-        # Eğer bulunamadıysa, sayısal bir sütun bulmayı dene
+        # If not found, try to find a numerical column
         if not column and self.numeric_columns:
-            # Metin "büyükten küçüğe" veya "azalan" içeriyorsa, muhtemelen sayısal bir sütun isteniyor
-            if any(x in text.lower() for x in ["büyükten", "azalan", "desc"]):
+            # If text contains "descending" or "decreasing", probably a numerical column is wanted
+            if any(x in text.lower() for x in ["descending", "decreasing", "desc"]):
                 column = self.numeric_columns[0]
             else:
                 column = self.numeric_columns[0]
         
-        # Yine bulunamadıysa, herhangi bir sütunu kullan
+        # If still not found, use any column
         if not column and len(self.df.columns) > 0:
             column = self.df.columns[0]
         
-        # Sıralama yönünü bul
-        ascending = True  # Varsayılan artan sıralama
-        if any(x in text.lower() for x in ["azalan", "büyükten küçüğe", "desc", "tersine", "ters", "tersten"]):
+        # Find sort direction
+        ascending = True  # Default ascending
+        if any(x in text.lower() for x in ["descending", "decreasing", "desc", "reverse"]):
             ascending = False
         
         return column, ascending
     
     def _extract_group_params(self, text: str) -> Tuple[list, str]:
-        """Metin içinden gruplama parametrelerini çıkarır"""
+        """Extracts grouping parameters from text"""
         columns = []
         
-        # Kategorik sütunları öncelikle kontrol et
+        # Check categorical columns first
         for col in self.categorical_columns:
             if col.lower() in text.lower():
                 columns.append(col)
         
-        # Eğer kategorik sütun bulunamadıysa, herhangi bir sütunu dene
+        # If no categorical column found, try any column
         if not columns:
             for col in self.df.columns:
                 if col.lower() in text.lower():
                     columns.append(col)
                     break
         
-        # Yine bulunamadıysa ve kategorik sütunlar varsa, ilkini kullan
+        # If still not found and categorical columns exist, use the first one
         if not columns and self.categorical_columns:
             columns = [self.categorical_columns[0]]
         
-        # Aggregasyon fonksiyonunu bul
-        agg_func = "mean"  # Varsayılan ortalama
+        # Find aggregation function
+        agg_func = "mean"  # Default average
         
-        if any(x in text.lower() for x in ["toplam", "sum", "topla"]):
+        if any(x in text.lower() for x in ["sum", "total"]):
             agg_func = "sum"
-        elif any(x in text.lower() for x in ["sayı", "count", "adet", "miktar"]):
+        elif any(x in text.lower() for x in ["count", "number", "quantity"]):
             agg_func = "count"
-        elif any(x in text.lower() for x in ["max", "en büyük", "maksimum", "en yüksek"]):
+        elif any(x in text.lower() for x in ["max", "largest", "maximum", "highest"]):
             agg_func = "max"
-        elif any(x in text.lower() for x in ["min", "en küçük", "minimum", "en düşük"]):
+        elif any(x in text.lower() for x in ["min", "smallest", "minimum", "lowest"]):
             agg_func = "min"
-        elif any(x in text.lower() for x in ["ort", "ortalama", "mean", "avg", "average"]):
+        elif any(x in text.lower() for x in ["mean", "average", "avg"]):
             agg_func = "mean"
         
         return columns, agg_func
     
     def _extract_columns_from_text(self, text: str) -> List[str]:
-        """Metinden sütun adlarını çıkarır"""
+        """Extracts column names from text"""
         columns = []
         
-        # Tüm sütunları kontrol et
+        # Check all columns
         for col in self.df.columns:
             if col.lower() in text.lower():
                 columns.append(col)
         
-        # Eğer hiç sütun bulunamadıysa, metinde geçen kelimeleri kontrol et
+        # If no columns found, check for words in the text
         if not columns:
             words = re.findall(r'\b\w+\b', text)
             for word in words:
-                if len(word) > 3:  # En az 4 karakter olan kelimeleri kontrol et
+                if len(word) > 3:  # Check words with at least 4 characters
                     for col in self.df.columns:
                         if word.lower() in col.lower() or col.lower() in word.lower():
                             columns.append(col)
         
-        # Tekrar eden sütunları temizle
+        # Remove duplicates
         columns = list(dict.fromkeys(columns))
         
         return columns
     
     def transform_filter(self, params: Dict) -> pd.DataFrame:
-        """DataFrame'i filtreleme"""
+        """Filter the DataFrame"""
         column = params.get("column")
         condition = params.get("condition", "==")
         value = params.get("value")
@@ -344,19 +344,19 @@ class DataTransformer:
             if isinstance(value, list):
                 return self.df[self.df[column].isin(value)]
         elif condition == "contains":
-            # Hem string hem de listeler için çalışabilir
+            # Works for both strings and lists
             if isinstance(value, str):
-                # Eğer sütun string tipindeyse contains kullan
+                # If column is string type, use contains
                 if self.df[column].dtype == 'object':
                     return self.df[self.df[column].str.contains(str(value), na=False, case=False)]
                 else:
-                    # Değilse string'e çevirip kontrol et
+                    # Otherwise convert to string and check
                     return self.df[self.df[column].astype(str).str.contains(str(value), na=False, case=False)]
         
         return self.df
 
     def transform_sort(self, params: Dict) -> pd.DataFrame:
-        """DataFrame'i sıralama"""
+        """Sort the DataFrame"""
         column = params.get("column")
         ascending = params.get("ascending", True)
         
@@ -366,7 +366,7 @@ class DataTransformer:
         return self.df.sort_values(by=column, ascending=ascending)
 
     def transform_group(self, params: Dict) -> pd.DataFrame:
-        """DataFrame'i gruplama"""
+        """Group the DataFrame"""
         columns = params.get("columns")
         agg_func = params.get("agg_func", "mean")
         
@@ -376,29 +376,29 @@ class DataTransformer:
         if isinstance(columns, str):
             columns = [columns]
         
-        # Sütunların varlığını kontrol et
+        # Check column existence
         valid_columns = [col for col in columns if col in self.df.columns]
         if not valid_columns:
             return self.df
             
-        # Hangi sütunların toplanacağını otomatik tespit et
+        # Automatically detect which columns to aggregate
         if agg_func in ["mean", "sum", "min", "max"]:
-            # Sayısal sütunları kullan
+            # Use numerical columns
             agg_columns = [col for col in self.numeric_columns if col not in valid_columns]
             if not agg_columns:
-                # Sayısal sütun yoksa, count kullan
+                # If no numerical columns, use count
                 return self.df.groupby(valid_columns).size().reset_index(name='count')
             
-            # Agrege fonksiyonları için sözlük oluştur
+            # Create aggregation dictionary
             agg_dict = {col: agg_func for col in agg_columns}
             return self.df.groupby(valid_columns).agg(agg_dict).reset_index()
         else:
-            # count gibi diğer agregasyon fonksiyonları için
+            # For other aggregation functions like count
             return self.df.groupby(valid_columns).agg(agg_func).reset_index()
 
-    # Yeni dönüşüm fonksiyonları
+    # New transformation functions
     def transform_select(self, params: Dict) -> pd.DataFrame:
-        """Belirli sütunları seçme"""
+        """Select specific columns"""
         columns = params.get("columns")
         
         if not columns:
@@ -407,7 +407,7 @@ class DataTransformer:
         if isinstance(columns, str):
             columns = [columns]
         
-        # Sütunların varlığını kontrol et
+        # Check column existence
         valid_columns = [col for col in columns if col in self.df.columns]
         if not valid_columns:
             return self.df
@@ -415,13 +415,13 @@ class DataTransformer:
         return self.df[valid_columns]
     
     def transform_rename(self, params: Dict) -> pd.DataFrame:
-        """Sütunları yeniden adlandırma"""
+        """Rename columns"""
         rename_dict = params.get("rename_dict", {})
         
         if not rename_dict:
             return self.df
             
-        # Sütunların varlığını kontrol et
+        # Check column existence
         valid_renames = {old: new for old, new in rename_dict.items() if old in self.df.columns}
         if not valid_renames:
             return self.df
@@ -429,67 +429,67 @@ class DataTransformer:
         return self.df.rename(columns=valid_renames)
     
     def transform_fillna(self, params: Dict) -> pd.DataFrame:
-        """Eksik değerleri doldurma"""
+        """Fill missing values"""
         value = params.get("value")
         columns = params.get("columns")
         
         if columns:
             if isinstance(columns, str):
                 columns = [columns]
-            # Sütunların varlığını kontrol et
+            # Check column existence
             valid_columns = [col for col in columns if col in self.df.columns]
             if not valid_columns:
                 return self.df
                 
-            # Sadece belirtilen sütunlarda doldur
+            # Fill only specified columns
             result = self.df.copy()
             for col in valid_columns:
                 result[col] = result[col].fillna(value)
             return result
         else:
-            # Tüm DataFrame'de doldur
+            # Fill entire DataFrame
             return self.df.fillna(value)
     
     def transform_dropna(self, params: Dict) -> pd.DataFrame:
-        """Eksik değerleri silme"""
-        how = params.get("how", "any")  # 'any' veya 'all'
+        """Drop missing values"""
+        how = params.get("how", "any")  # 'any' or 'all'
         columns = params.get("columns")
         
         if columns:
             if isinstance(columns, str):
                 columns = [columns]
-            # Sütunların varlığını kontrol et
+            # Check column existence
             valid_columns = [col for col in columns if col in self.df.columns]
             if not valid_columns:
                 return self.df
                 
-            # Sadece belirtilen sütunlarda eksik değerleri kontrol et
+            # Drop rows with missing values in specified columns
             return self.df.dropna(subset=valid_columns, how=how)
         else:
-            # Tüm DataFrame'deki eksik değerleri sil
+            # Drop rows with missing values in all columns
             return self.df.dropna(how=how)
     
-    # Mevcut dönüşüm fonksiyonları...
+    # Existing transformation functions...
     def transform_aggregate(self, params: Dict) -> pd.DataFrame:
-        """DataFrame üzerinde toplama işlemleri yapma"""
+        """Perform aggregation operations on DataFrame"""
         agg_func = params.get("agg_func", "mean")
         columns = params.get("columns")
         
         if columns:
             if isinstance(columns, str):
                 columns = [columns]
-            # Sütunların varlığını kontrol et
+            # Check column existence
             valid_columns = [col for col in columns if col in self.df.columns]
             if not valid_columns:
                 return self.df
                 
             return self.df[valid_columns].agg(agg_func).to_frame().reset_index()
         else:
-            # Sayısal sütunları otomatik kullan
+            # Automatically use numerical columns
             return self.df[self.numeric_columns].agg(agg_func).to_frame().reset_index()
 
     def transform_pivot(self, params: Dict) -> pd.DataFrame:
-        """Pivot tablo oluşturma"""
+        """Create a pivot table"""
         index = params.get("index")
         columns = params.get("columns")
         values = params.get("values")
@@ -497,12 +497,12 @@ class DataTransformer:
         if not index or not columns or not values:
             return self.df
             
-        # Sütunların varlığını kontrol et
+        # Check column existence
         if index not in self.df.columns or columns not in self.df.columns or values not in self.df.columns:
             return self.df
             
         try:
             return self.df.pivot_table(index=index, columns=columns, values=values, aggfunc='mean').reset_index()
         except:
-            # Pivot başarısız olursa orijinal veriyi döndür
+            # Return original data if pivot fails
             return self.df
